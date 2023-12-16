@@ -3,6 +3,8 @@ A work-in-progress web-based driver (and maybe eventually GUI?) for the Alientek
 
 Just plug in the DP100 using the USB-A to USB-A cable (make sure it's in "USBD" mode; double-tap ◀ to switch), and click connect!
 
+<img src="https://github.com/scottbez1/webdp100/assets/414890/846fbe78-497b-4f76-9dce-f7f3ffbbe971" width=300 />
+
 Implementation of the HID protocol is based on reverse-engineering the Windows library (`ATK-DP100DLL(x64)_2.0.dll`), which can be found on baidu or in the [DP100-PyQt5-GUI](https://github.com/ElluIFX/DP100-PyQt5-GUI) project.
 
 I don't plan on building a full-featured web interface, but if you want to, please feel free to use this as a starting point for your own project!
