@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "crc": "^4.3.2",
     "next": "14.0.4",
     "react": "^18",
     "react-dom": "^18"

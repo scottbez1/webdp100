@@ -1,31 +1,4 @@
-
-// TODO: replace with library
-/**
- * Calculates the buffers CRC16.
- *
- * @param {Buffer} buffer the data buffer.
- * @return {number} the calculated CRC16.
- * 
- * Source: github.com/yaacov/node-modbus-serial
- */
-export function crc16(buffer: Uint8Array) {
-    var crc = 0xFFFF;
-    var odd;
-
-    for (var i = 0; i < buffer.length; i++) {
-        crc = crc ^ buffer[i];
-
-        for (var j = 0; j < 8; j++) {
-            odd = crc & 0x0001;
-            crc = crc >> 1;
-            if (odd) {
-                crc = crc ^ 0xA001;
-            }
-        }
-    }
-
-    return crc;
-};
+import { crc16, crc16ccitt, crc16kermit, crc16modbus } from "crc";
 
 // TODO: convert to enum
 export const FRAME_FUNC = {
@@ -69,7 +42,7 @@ export const inputReportDataToFrame = (buf: ArrayBuffer): Frame | null => {
     }
     const checksum = frameDv.getUint16(4 + dataLen, true)
     console.log('got frame', frame)
-    const computedChecksum = crc16(frameData.slice(0, 4 + dataLen))
+    const computedChecksum = crc16modbus(frameData.slice(0, 4 + dataLen))
     if (computedChecksum !== checksum) {
         console.warn('checksum mismatch in received frame', { expected: computedChecksum, received: checksum })
         return null;
