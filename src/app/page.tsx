@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <main className={styles.main}>
       { device && (<DP100 device={device} />)}
-      { device === null && requestAndOpen !== null ? <button onClick={requestAndOpen}>Connect</button> : null }
+      { device === null ? (requestAndOpen !== null ? <button onClick={requestAndOpen}>Connect</button> : <div>Something's not right. Is webhid supported in your browser?</div>) : null }
       { errorMessage && <div><b>{errorMessage}</b></div> }
     </main>
   )
