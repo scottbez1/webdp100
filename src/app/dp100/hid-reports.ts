@@ -29,7 +29,6 @@ export type Frame = {
 // TODO: clean up the array/buffer types?
 export const inputReportDataToFrame = (buf: ArrayBuffer): Frame | null => {
     const frameData = new Uint8Array(buf)
-    console.log(frameData);
     const frameDv = new DataView(frameData.buffer, frameData.byteOffset, frameData.byteLength)
 
     const dataLen = frameDv.getUint8(3);
@@ -41,7 +40,6 @@ export const inputReportDataToFrame = (buf: ArrayBuffer): Frame | null => {
         data: frameData.slice(4, 4 + dataLen),
     }
     const checksum = frameDv.getUint16(4 + dataLen, true)
-    console.log('got frame', frame)
     const computedChecksum = crc16modbus(frameData.slice(0, 4 + dataLen))
     if (computedChecksum !== checksum) {
         console.warn('checksum mismatch in received frame', { expected: computedChecksum, received: checksum })

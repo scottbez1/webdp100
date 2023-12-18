@@ -46,7 +46,7 @@ export const useRequestWebHIDDevice = ({requestOptions}: {requestOptions: HIDDev
     }, [device])
 
     return {
-      requestAndOpen: 'hid' in navigator ? requestAndOpen : null,
+      requestAndOpen: typeof window !== 'undefined' && 'hid' in navigator ? requestAndOpen : null,
       device,
       errorMessage,
     }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FRAME_FUNC, Frame, inputReportDataToFrame } from "./hid-reports";
 import { BasicInfo, BasicSet, basicInfoFromFrame, basicSetFrameData, basicSetFromFrame } from "./frame-data";
 import { crc16modbus } from "crc";
@@ -11,20 +11,37 @@ export class DP100 {
         this.device = device
     }
 
+    private queue: Array<() => Promise<void>> = []
+    private runningTask: boolean = false
 
-    // TODO: Leaking memory?
-    private pendingTask: Promise<void> = Promise.resolve()
+    private enqueue(task: () => Promise<void>) {
+        this.queue.push(task)
+        this.serviceQueue()
+    }
 
+    private async serviceQueue() {
+        if (this.runningTask) {
+            return
+        }
+        this.runningTask = true;
+        try {
+            let task
+            while (task = this.queue.shift()) {
+                await task()
+            }
+        } finally {
+            this.runningTask = false
+        }
+    }
 
     private async sendFrameForResponse(frame: Frame, expectedFunctionResponse: number) {
         return new Promise<Frame>((reqResolve, reqReject) => {
-            this.pendingTask = this.pendingTask.then(async () => {
-                console.log('starting new task')
+            this.enqueue(async () => {
                 return new Promise<void>((taskResolve) => {
                     // TODO: timeout to prevent queue backup
 
                     const eventListener = (e: HIDInputReportEvent) => {
-                        console.log(e.device.productName + ": got input report " + e.reportId);
+                        console.debug(e.device.productName + ": got input report " + e.reportId);
                         const frame = inputReportDataToFrame(e.data.buffer)
                         if (frame !== null && frame.functionType === expectedFunctionResponse) {
                             success(frame)
@@ -35,12 +52,12 @@ export class DP100 {
                         reqResolve(result)
                         taskResolve()
                     }
-                    const failure = (error: any) => {
-                        this.device.removeEventListener('inputreport', eventListener)
-                        reqReject(error)
-                        taskResolve()
-                    }
-                    console.log('registering listener')
+                    // const failure = (error: any) => {
+                    //     console.log('unregistering listener')
+                    //     this.device.removeEventListener('inputreport', eventListener)
+                    //     reqReject(error)
+                    //     taskResolve()
+                    // }
                     this.device.addEventListener('inputreport', eventListener)
                     this.sendFrame(frame)
                 })
@@ -54,7 +71,7 @@ export class DP100 {
             frame.functionType,
             frame.sequence,
             frame.dataLen,
-            ...frame.data,
+            ...(frame.data as any), // TODO: fix types
             0,
             0,
         ]);
@@ -63,7 +80,7 @@ export class DP100 {
         const frameBufferDv = new DataView(frameBuffer.buffer, frameBuffer.byteOffset, frameBuffer.byteLength)
         frameBufferDv.setUint16(frameBuffer.length - 2, checksum, true); // little-endian
 
-        console.log('sendReport', frameBuffer)
+        console.debug('sendReport', {functionType: frame.functionType})
         await this.device.sendReport(0, frameBuffer);
     }
 
@@ -79,7 +96,7 @@ export class DP100 {
         }
         const response = await this.sendFrameForResponse(frame, FRAME_FUNC.FRAME_BASIC_INFO)
         const basicInfo = basicInfoFromFrame(response)
-        console.log('basic info', basicInfo)
+        console.debug('basic info', basicInfo)
         return basicInfo
     }
 
@@ -95,7 +112,7 @@ export class DP100 {
         }
         const response = await this.sendFrameForResponse(frame, FRAME_FUNC.FRAME_BASIC_SET)
         const basicSet = basicSetFromFrame(response)
-        console.log('basic set', basicSet)
+        console.debug('basic set', basicSet)
         return basicSet
     }
 
@@ -111,7 +128,6 @@ export class DP100 {
             data: frameData,
         }
         const response = await this.sendFrameForResponse(frame, FRAME_FUNC.FRAME_BASIC_SET)
-        console.log('setBasic response', response)
         return response.data[0] === 1
     }
 }
@@ -120,4 +136,47 @@ export const useDP100 = (device: HIDDevice) => {
     return useMemo(() => {
         return new DP100(device)
     }, [device])
+}
+
+type WithTimestamp<T> = T & {_ts: Date}
+
+export function useInfoSubscription<T>(loadData: () => Promise<T> , delayMs: number): { data: WithTimestamp<T> | null, refresh: () => Promise<void> } {
+    const [data, setData] = useState<WithTimestamp<T> | null>(null)
+
+    const mountedRef = useRef<boolean>(false)
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const refresh = useMemo(() => {
+        return async () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current)
+                timeoutRef.current = null
+            }
+            if (!mountedRef.current) {
+                return
+            }
+            const newData = await loadData()
+            setData({
+                ...newData,
+                _ts: new Date(),
+            })
+            if (!mountedRef.current) {
+                return
+            }
+            timeoutRef.current = setTimeout(refresh, delayMs)
+        }
+    }, [delayMs])
+
+    useEffect(() => {
+        mountedRef.current = true
+        refresh()
+        return () => {
+            mountedRef.current = false
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current)
+                timeoutRef.current = null
+            }
+        }
+    }, [refresh])
+
+    return { data, refresh }
 }
