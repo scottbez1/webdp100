@@ -7,7 +7,9 @@ Just plug in the DP100 using the USB-A to USB-A cable (make sure it's in "USBD" 
 
 ## Demo
 
-Watch the [video](https://youtu.be/46w4E4JxKYE)
+Watch the [video:](https://youtu.be/46w4E4JxKYE)
+
+<a href="https://youtu.be/46w4E4JxKYE"><img src="https://img.youtube.com/vi/46w4E4JxKYE/maxresdefault.jpg" width="400" /></a>
 
 If you have a DP100, plug it in via USB, open Chrome and go to https://scottbez1.github.io/webdp100 to try this for yourself!
 
