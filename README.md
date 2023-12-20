@@ -5,6 +5,14 @@ Just plug in the DP100 using the USB-A to USB-A cable (make sure it's in "USBD" 
 
 <img src="https://github.com/scottbez1/webdp100/assets/414890/846fbe78-497b-4f76-9dce-f7f3ffbbe971" width=300 />
 
+## Demo
+
+Watch the [video](https://youtu.be/46w4E4JxKYE)
+
+If you have a DP100, plug it in via USB, open Chrome and go to https://scottbez1.github.io/webdp100 to try this for yourself!
+
+## About
+
 Implementation of the HID protocol is based on reverse-engineering the Windows library (`ATK-DP100DLL(x64)_2.0.dll`), which can be found on baidu or in the [DP100-PyQt5-GUI](https://github.com/ElluIFX/DP100-PyQt5-GUI) project.
 
 I don't plan on building a full-featured web interface, but if you want to, please feel free to use this as a starting point for your own project!
